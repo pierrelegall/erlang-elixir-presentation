@@ -1,0 +1,244 @@
+#+TITLE: Erlang/OTP and Elixir
+
+* Are your microservices-sceptical?
+*** Simplicity
+
+[[file:./images/monolith-vs-microservices-hapiness.png]]
+
+*** Productivity
+
+[[file:./images/monolith-vs-microservices-productivity.png]]
+
+* Erlang/OTP
+** The problem
+
+In the 80s, Erisson needed a tool/language with this features:
+- granularity of concurrency (one asyncronous telephony process -> one process)
+- error recovery capabilities 
+- hot code reloading (updates without affecting the users)
+
+After experiences on more than 20 languages, they conclude that tool does not already exists!
+
+** A solution: Erlang + OTP
+*** An implementation of the actor model
+
+An actor is an entity that, in response to a message it receives, can:
+- send messages to other actors
+- create new actors
+- change its state
+
+Erlang processes are actors.
+
+It allows:
+- *isolation*: if one actor crashes, it should only affect that actor
+- *distribution*: actors should be able to communicate over a network as if they were on the same machine
+- *fairness*: no actor is allowed to starve any other actor
+
+*** Lightweight processes
+
+[[file:./images/lightweight-processes.png]]
+
+See more explanations [[https://stackoverflow.com/questions/2708033/technically-why-are-processes-in-erlang-more-efficient-than-os-threads#2708096][here]].
+
+*** Fault tolerant
+
+- processes are *allowed to fail*
+- a local error can be manage by another process
+
+*** Hot code reloading
+** The result
+*** Scalable systems
+
+At least =n x (0.75 x nb_of_cpu)=, *without changing the source code*.
+
+Note you can clusterize multiple BEAM VMs ([[https://www.youtube.com/watch?v=zQEgEnjuQsU][can be automized]]).
+
+*** A consistent stack
+
+[[file:./images/classical-stack-vs-erlang-stack.png]]
+
+*** An impressive uptime
+
+/99.999%/
+
+Decause:
+- process fails do not make the complete system fails
+- the system can be distributed over multiple machines
+- hot code reloading avoid technical downtime
+
+*** A monolith or microservices?
+
+As you want.
+
+Some people like to call it *nanoservices* or *microlith*.
+
+*** A monitorable system
+** Is it proven?
+
+The Erlang plateform is used by services like:
+- Ericsson: power ~50% of phone telecom in EU
+- Whatsapp: 5.000.000 connections by node with only 10 devs/devops (when sold to FB)
+- Facebook (chat)
+- Discord
+- Pinterest
+- Many many game server (from EA Games, Activision, Blizzard…)
+
+And software like:
+- Riak
+- CouchDB
+- RabbitMQ
+
+** Why so misknown?
+*** Thinking processes: a diferent way to think
+*** Functinal programming: who does not use OOP?
+
+- *only functions and values* - no classes, no object, so no method lookup
+- immutable data
+- tail recursion (no syntactic loops available 😱)
+
+*** Non-classic syntax: who said obscur?:
+
+#+BEGIN_SRC erlang
+-module(count_to_ten).
+-export([count_to_ten/0]).
+
+count_to_ten() -> do_count(0).
+
+do_count(10) -> 10;
+do_count(N) -> do_count(N + 1).
+#+END_SRC
+
+* The Elixir language
+** At the beginning
+
+José Valim made Elixir because:
+- /Ruby (MRI)/ threads are not real threads
+- /Ruby on Rails/ thread safety is hard to keep
+- he heards about what we can do with Erlang
+
+Version 1.0 released in 2014.
+
+#+BEGIN_QUOTE
+What Elixir brings to the table is a complete different surface syntax, inspired by Ruby.
+What you might called an /non-scary/ syntax, and a load of extra goodies. -- Joe Armstrong
+#+END_QUOTE
+
+** The language
+
+Elixir is, as Erlang:
+- dynamicly typed
+- strongly typed
+- functional
+
+| Types     | Examples                                      |
+|-----------+-----------------------------------------------|
+| intengers | 1, 0x1F                                       |
+| floats    | 1.0                                           |
+| booleans  | true, false                                   |
+| atoms     | :atom                                         |
+| strings   | "elixir"                                      |
+| lists     | [1, 2, true]                                  |
+| tuples    | {1, 2, true}                                  |
+| maps      | %{ a: 1, b: 2, c: true }                      |
+| structs   | %User{ first_name: "John", last_name: "Doe" } |
+
+#+BEGIN_SRC elixir
+defmodule CountToTen do
+  def count_to_ten do
+    do_count(0)
+  end
+
+  defp do_count(10) do
+    10
+  end
+
+  defp do_count(n) do
+    do_count(n + 1)
+  end
+end
+#+END_SRC
+
+Some language extra features are:
+- meta-programming with macros
+- protocols (allow multiple dispatch like in OOP, [[https://www.youtube.com/watch?v=sJvfCE6PFxY][ever better]])
+- pipe operator:
+
+#+BEGIN_SRC elixir
+[1, 2, 3, 4, 5]
+|> Enum.filter(fn (x) -> Integer.is_odd(x) end)
+|> Enum.map(fn (x) -> x * x end)
+#+END_SRC
+
+The language is compiled by default (for =.ex= files) but can be interpreted too (for =.exs= files).
+
+** Tooling
+
+*Mix*:
+- manages dependencies
+- compiles your project
+- lints your code (in the 1.6, actually in rc)
+- runs customs tasks
+
+And it's extensible!
+
+** Slant stats
+
+[[file:./images/elixir-on-slant.png][Elixir on Slant]]
+
+** Demo
+*** Elixir basis
+- module
+- functions
+- patterm matching
+- documentation
+- testing (ExUnit)
+- observer
+*** Run functions asynchronously with =Task.async=
+
+#+BEGIN_SRC elixir
+Task.async(fn -> Demo.count end) |> Task.await
+#+END_SRC
+
+vs.
+
+#+BEGIN_SRC elixir
+for _ <- 1..4 do
+  Task.async(fn -> Demo.count end)
+end |> Enum.map(&Task.await/1)
+#+END_SRC
+
+*** Creating processes with =Kernel.spawn=
+*** Standardise processes interface with =GenServer=
+
+See [[https://www.youtube.com/watch?v=zC7TcrRi46Q][Elixir GenServer basics]].
+
+*** Supervise with =Supervisor=
+
+See [[https://www.youtube.com/watch?v=Gdf8JXeaPjw][Elixir Supervisor]].
+
+* Conclusion
+
+Pros:
+- Erlang/OTP scale since the last 80s
+- Erlang/OTP systems are elastics
+- Erlang/OTP has a « full microservices stack » in a very consistent ecosystem
+- Erlang/OTP systems are monitorable
+- Erlang/OTP systems are hot reloadable
+- Erlang/OTP does not force you to create N source code repositories
+- Erlang/OTP is today even better with Elixir
+
+Cons:
+- Erlang/Elixir is yet another language
+- Erlang/OTP developers have to think about processes
+
+* Sources
+
+- [[https://martinfowler.com/microservices/][Microservices resources]]
+- [[http://www.erlang.org/course/history][Erlang history]]
+- [[https://www.youtube.com/watch?v=xrIjfIjssLE][Erlang the movie]]
+- [[https://en.wikipedia.org/wiki/Actor_model][Actor model wikipedia page]]
+- [[http://www.erlang-factory.com/upload/presentations/708/HitchhikersTouroftheBEAM.pdf][Hitchhiker’s Tour of the BEAM]]
+- [[https://media.readthedocs.org/pdf/beam-wisdoms/latest/beam-wisdoms.pdf][BEAM VM Wisdoms]]
+- [[https://www.youtube.com/watch?v=bo5WL5IQAd0][How we program multicores -- Joe Armstrong]]
+- [[https://www.youtube.com/watch?v=-CIMUwX1OZY][Elixir/Erlang OTP in Microservice Architecture -- Thomas Newton]]
+- [[https://www.youtube.com/watch?v=gom6nEvtl3U][Elixir: The only Sane Choice in an Insane World -- Brian Cardarella]]
