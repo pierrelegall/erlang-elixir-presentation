@@ -1,7 +1,13 @@
 #+TITLE: Erlang/OTP and Elixir
 
-* Are your microservices-sceptical?
-*** Simplicity
+* Why this presentation ?
+** I like Ruby but…
+
+- concurrency in Ruby is not easy
+- microsevices with Ruby is as complex as with Node or Java
+
+** The microservice pattern is cool but…
+ *** Simplicity
 
 [[file:./images/monolith-vs-microservices-hapiness.png]]
 
@@ -9,17 +15,26 @@
 
 [[file:./images/monolith-vs-microservices-productivity.png]]
 
-* Erlang/OTP
+** I don't do nor Erlang/OTP neither Elixir yet but…
+*** Hype from the Ruby community
+
+A lot of people from the Ruby community talk and migrate to Elixir 🤔
+
+*** Slant stats
+
+[[file:./images/elixir-on-slant.png][Elixir on Slant]]
+
+* Erlang: an Ericson story
 ** The problem
 
-In the 80s, Erisson needed a tool/language with this features:
+In the 80s, Erisson needed a tool/language wich can do:
 - granularity of concurrency (one asyncronous telephony process -> one process)
 - error recovery capabilities 
 - hot code reloading (updates without affecting the users)
 
 After experiences on more than 20 languages, they conclude that tool does not already exists!
 
-** A solution: Erlang + OTP
+** A solution: Erlang/OTP
 *** An implementation of the actor model
 
 An actor is an entity that, in response to a message it receives, can:
@@ -42,37 +57,11 @@ See more explanations [[https://stackoverflow.com/questions/2708033/technically-
 
 *** Fault tolerant
 
+Concept:
 - processes are *allowed to fail*
 - a local error can be manage by another process
 
 *** Hot code reloading
-** The result
-*** Scalable systems
-
-At least =n x (0.75 x nb_of_cpu)=, *without changing the source code*.
-
-Note you can clusterize multiple BEAM VMs ([[https://www.youtube.com/watch?v=zQEgEnjuQsU][can be automized]]).
-
-*** A consistent stack
-
-[[file:./images/classical-stack-vs-erlang-stack.png]]
-
-*** An impressive uptime
-
-/99.999%/
-
-Decause:
-- process fails do not make the complete system fails
-- the system can be distributed over multiple machines
-- hot code reloading avoid technical downtime
-
-*** A monolith or microservices?
-
-As you want.
-
-Some people like to call it *nanoservices* or *microlith*.
-
-*** A monitorable system
 ** Is it proven?
 
 The Erlang plateform is used by services like:
@@ -81,22 +70,30 @@ The Erlang plateform is used by services like:
 - Facebook (chat)
 - Discord
 - Pinterest
-- Many many game server (from EA Games, Activision, Blizzard…)
+- Many game server (from EA Games, Activision, Blizzard…)
 
 And software like:
-- Riak
-- CouchDB
-- RabbitMQ
+- Databases: Riak, CouchDB
+- Message broker: RabbitMQ
+- XMPP server: ejabber2
 
 ** Why so misknown?
 *** Thinking processes: a diferent way to think
+
+- no shared memory 😱
+- no thread
+- no lock
+- no mutex
+- no …
+- *you should deal with processes and message passing*
+
 *** Functinal programming: who does not use OOP?
 
-- *only functions and values* - no classes, no object, so no method lookup
-- immutable data
-- tail recursion (no syntactic loops available 😱)
+- only functions and values (no classes, no object, no method) 😱
+- forced immutability 😱
+- tail recursion only, no syntactic loops available 😱
 
-*** Non-classic syntax: who said obscur?:
+*** Non-classic syntax
 
 #+BEGIN_SRC erlang
 -module(count_to_ten).
@@ -108,91 +105,344 @@ do_count(10) -> 10;
 do_count(N) -> do_count(N + 1).
 #+END_SRC
 
-* The Elixir language
-** At the beginning
+Who said obscur syntax?
 
-José Valim made Elixir because:
-- /Ruby (MRI)/ threads are not real threads
-- /Ruby on Rails/ thread safety is hard to keep
-- he heards about what we can do with Erlang
+* Entr'acte
+** Some vacabulary
 
-Version 1.0 released in 2014.
+- The BEAM: the VM design by Ericson to build concurrent and fault tolerant software
+- Erlang: the language design by Ericson to run on the BEAM
+- Elixir: a new language wich run on the BEAM, it's an alternative to the Erlang language
+
+** Warning!
+
+- the BEAN is often named the Erlang VM or the EVM
+- when we talk about Erlang, we often think about the BEAM capabilities
+
+* Diving into Erlang/OTP (with Elixir)
+** The BEAM
+*** Process management
+
+[[./images/beam-processes.jpg]]
+
+*** Isolation
+
+[[./images/message-passing.jpg]]
+
+- no shared memory
+- only message passing
+- one GC by process
+
+*** One scheduler by core
+
+[[./images/beam-one-scheduler-by-core.png]]
+
+*** A « side effect »
+**** Scalability
+
+At least =n x (0.75 x nb_of_cpu)=, *without changing the source code*.
+
+[[./images/beam-concurrency.jpg]]
+
+Note you can clusterize multiple BEAM VMs ([[https://www.youtube.com/watch?v=zQEgEnjuQsU][can be automized]]).
+
+** Elixir
+*** Big lines
+
+Elixir is:
+- dynamicly and strongly typed
+- functional
+- compiled (but intepretable too)
 
 #+BEGIN_QUOTE
 What Elixir brings to the table is a complete different surface syntax, inspired by Ruby.
 What you might called an /non-scary/ syntax, and a load of extra goodies. -- Joe Armstrong
 #+END_QUOTE
 
-** The language
+Rubyish syntax, but *it's really Erlang*.
 
-Elixir is, as Erlang:
-- dynamicly typed
-- strongly typed
-- functional
+*** At the beginning
 
-| Types     | Examples                                      |
-|-----------+-----------------------------------------------|
-| intengers | 1, 0x1F                                       |
-| floats    | 1.0                                           |
-| booleans  | true, false                                   |
-| atoms     | :atom                                         |
-| strings   | "elixir"                                      |
-| lists     | [1, 2, true]                                  |
-| tuples    | {1, 2, true}                                  |
-| maps      | %{ a: 1, b: 2, c: true }                      |
-| structs   | %User{ first_name: "John", last_name: "Doe" } |
+José Valim made Elixir because:
+- /Ruby (MRI)/ threads are not real threads
+- /Ruby on Rails/ thread safety is hard to keep
+- he heards about what we can do with Erlang
+
+Development:
+- start in 2010
+- version 1.0 released in 2014.
+
+*** How it looks like
+**** Basic types
 
 #+BEGIN_SRC elixir
-defmodule CountToTen do
-  def count_to_ten do
-    do_count(0)
-  end
-
-  defp do_count(10) do
-    10
-  end
-
-  defp do_count(n) do
-    do_count(n + 1)
-  end
-end
+  integer = 42
+  float   = 0.42
+  boolean = true, false
+  atom    = :atom
+  string  = "elixir"
+  tuple   = {1, 2, true}
+  list    = [1, 2, true]
+  map     = %{ a: 1, b: 2, c: true }
+  struct  = %User{ first_name: "John", last_name: "Doe" }
 #+END_SRC
 
-Some language extra features are:
-- meta-programming with macros
-- protocols (allow multiple dispatch like in OOP, [[https://www.youtube.com/watch?v=sJvfCE6PFxY][ever better]])
-- pipe operator:
+**** Control structures
+***** if/unless
 
 #+BEGIN_SRC elixir
-[1, 2, 3, 4, 5]
-|> Enum.filter(fn (x) -> Integer.is_odd(x) end)
+  if 1 == 2 do
+    "Truthy"
+  else
+    "Falsy"
+  end
+  #=> "Falsy"
+
+  if "a string value" do
+    "Truthy"
+  end
+  #=> "Truthy"
+
+  unless is_integer("hello") do
+    "Not an integer"
+  end
+  #=> "Not an integer"
+#+END_SRC
+
+***** case
+
+#+BEGIN_SRC elixir
+  result = {:ok, "Hello World"}
+
+  case result do
+    {:ok, result} -> result
+    {:error} -> "Uh oh!"
+    _ -> "Catch all"
+  end
+  #=> "Hello World"
+#+END_SRC
+
+***** cond
+
+#+BEGIN_SRC elixir
+cond do
+  7 + 1 == 0 -> "Incorrect"
+  8 + 3 == 11 -> "Correct"
+  true -> "Catch all"
+end
+#=> "Correct"
+#+END_SRC
+
+**** Modules and functions
+
+#+BEGIN_SRC elixir
+  defmodule CountToTen do
+    def count_to_ten do
+      do_count(0)
+    end
+
+    defp do_count(10) do
+      10
+    end
+
+    defp do_count(n) do
+      do_count(n + 1)
+    end
+  end
+#+END_SRC
+
+**** Struct
+
+How to define it?
+
+#+BEGIN_SRC elixir
+  defmodule Banana do
+    defstruct [:size, :color]
+
+    @power_multiplicator 42
+
+    def power(banana) do
+      banana.size * @power_multiplicator
+    end
+  end
+#+END_SRC
+
+How to use it?
+
+#+BEGIN_SRC elixir
+  a_banana = %Banana{ size: 5, color: :blue }
+  Banana.power(a_banana)
+  #=> 210
+#+END_SRC
+
+**** Pattern matching (on value)
+
+On assignment:
+
+#+BEGIN_SRC elixir
+  # Lists
+  list = [1, 2, 3]
+  [1, 2, 3] = list #=> [1, 2, 3]
+  [] = list #=> (MatchError) no match of right hand side value: [1, 2, 3]
+
+  [1 | tail] = list #=> [1, 2, 3]
+  tail #=> [2, 3]
+  [2 | _] = list #=> (MatchError) no match of right hand side value: [1, 2, 3]
+
+  # Tuples
+  {:ok, value} = {:ok, "Successful!"} #=> {:ok, "Successful!"}
+  value #=> "Successful!"
+  {:ok, value} = {:error} #=> (MatchError) no match of right hand side value: {:error}
+#+END_SRC
+
+In function:
+
+#+BEGIN_SRC elixir
+  defmodule Length do
+    def of([]), do: 0
+    def of([_ | tail]), do: 1 + of(tail)
+  end
+#+END_SRC
+
+**** Pipe operator
+
+If we want to:
+- Take a collection
+- remove zeros and negative numbers
+- then compute there square
+
+How should we write it ?
+
+***** Version 1
+
+#+BEGIN_SRC elixir
+  Enum.map(
+    Enum.filter(
+      [1, 2, -3, 4, -5],
+      fn (x) -> x > 0 end
+    ),
+  fn (x) -> x * x end)
+#+END_SRC
+
+***** Version 2
+
+#+BEGIN_SRC elixir
+numbers = [1, 2, -3, 4, -5]
+numbers = Enum.filter(numbers, fn (x) -> x > 0 end)
+numbers = Enum.map(numbers, fn (x) -> x * x end)
+#+END_SRC
+
+***** Version 3
+
+And now, with the pipe operator 😍
+
+#+BEGIN_SRC elixir
+[1, 2, -3, 4, -5]
+|> Enum.filter(fn (x) -> x > 0 end)
 |> Enum.map(fn (x) -> x * x end)
 #+END_SRC
 
-The language is compiled by default (for =.ex= files) but can be interpreted too (for =.exs= files).
+Allow method chaining style in functional languages!
 
-** Tooling
+**** Protocols
 
-*Mix*:
-- manages dependencies
+Came from the [[https://clojure.org/][Clojure]] protocols.
+
+How to add a new protocol:
+
+#+BEGIN_SRC elixir
+defprotocol Sound do
+  def of(thing)
+end
+#+END_SRC
+
+How to add implementations:
+
+#+BEGIN_SRC elixir
+  defimpl Sound, for: Dog do
+    def of(string), do: "Woof"
+  end
+
+  defimpl Sound, for: Cat do
+    def of(map), do: "Meow"
+  end
+
+  defimpl Sound, for: Truck do
+    def of(tuple), do: "VROUM VROUM"
+  end
+#+END_SRC
+
+or
+
+#+BEGIN_SRC elixir
+  defmodule Cat do
+    defimpl Sound do
+      def of(_) do
+        "Meow"
+      end
+    end
+  end
+#+END_SRC
+
+**** Documentation and testing
+
+#+BEGIN_SRC elixir
+  defmodule Counter do
+    @moduledoc """
+    Documentation for Demo module.
+    """
+
+    @doc """
+    Count to ten.
+
+    ## Examples
+
+      iex> Demo.count
+      100_000_000
+    """
+    def count do
+      do_count(0)
+    end
+
+    defp do_count(100_000_000) do
+      100_000_000
+    end
+
+    defp do_count(n) do
+      do_count(n + 1)
+    end
+  end
+#+END_SRC
+
+#+BEGIN_SRC elixir
+  defmodule CounterTest do
+    use ExUnit.Case
+    doctest Counter
+
+    test "#count/0" do
+      assert Demo.count() == 100_000_000
+    end
+  end
+#+END_SRC
+
+**** And more
+
+- anonymous functions
+- comprehensions
+- macros
+- guards
+
+*** Tooling
+
+=Mix= centralize your Elixir needs:
 - compiles your project
-- lints your code (in the 1.6, actually in rc)
-- runs customs tasks
+- manages dependencies
+- runs customs tasks (and is pluggable)
+- lints your code
+- run a REPL in your application (=iex -S mix=)
+- manage sub-application (thanks to [[https://elixirschool.com/en/lessons/advanced/umbrella-projects/][Umbrella]])
 
-And it's extensible!
-
-** Slant stats
-
-[[file:./images/elixir-on-slant.png][Elixir on Slant]]
-
-** Demo
-*** Elixir basis
-- module
-- functions
-- patterm matching
-- documentation
-- testing (ExUnit)
-- observer
+** OTP
 *** Run functions asynchronously with =Task.async=
 
 #+BEGIN_SRC elixir
@@ -208,27 +458,76 @@ end |> Enum.map(&Task.await/1)
 #+END_SRC
 
 *** Creating processes with =Kernel.spawn=
+
+#+BEGIN_SRC elixir
+defmodule Player do
+  def play do
+    receive do
+      {:ping, player} -> send(player, {:pong, self()})
+    end
+  end
+end
+#+END_SRC
+
+#+BEGIN_SRC elixir
+defmodule PingPongTest do
+  use ExUnit.Case
+
+  test "let's play ping pong!" do
+    player = spawn(Player, :play, []) # create a process
+    send(player, {:ping, self()}) # send a message to the process
+    assert_receive {:pong, player}
+  end
+end
+#+END_SRC
+
 *** Standardise processes interface with =GenServer=
 
 See [[https://www.youtube.com/watch?v=zC7TcrRi46Q][Elixir GenServer basics]].
 
 *** Supervise with =Supervisor=
 
-See [[https://www.youtube.com/watch?v=Gdf8JXeaPjw][Elixir Supervisor]].
+[[./images/supervisor-tree.png]]
+
+[[./images/supervisor-restartson-for-one.png]]
+
+* The ecosystem
+** hex.pm
+
+An Elixir package repository.
+
+** Phoenix framework
+
+A back-end framework on the EVM
+
+** A consistent back-end stack
+
+[[file:./images/classical-stack-vs-erlang-stack.png]]
+
+** IoT capable
+
+The [[https://nerves-project.org/][Nerves project]]
 
 * Conclusion
+** Monolith vs microservices with Elixir
+
+Manage it as a monolith, run it as microservices.
+
+Some people call it *nanoservices* or *microlith*.
+
+** Pros and cons
 
 Pros:
-- Erlang/OTP scale since the last 80s
-- Erlang/OTP systems are elastics
-- Erlang/OTP has a « full microservices stack » in a very consistent ecosystem
-- Erlang/OTP systems are monitorable
-- Erlang/OTP systems are hot reloadable
-- Erlang/OTP does not force you to create N source code repositories
-- Erlang/OTP is today even better with Elixir
+- Erlang/OTP scale since the last 80s thanks to an « elastic » systems
+- Erlang/OTP has a complete « microservices stack » in a very consistent ecosystem
+- Erlang/OTP does not force you to create N source code repositories for technical reason
+- Erlang/OTP fault tolerance + hot reloading = nice uptime (/99.999%/)
+- Erlang/OTP systems are monitorable (?) = easier to hotfix
+- Erlang/OTP is today even better with Elixir 🎉
 
 Cons:
-- Erlang/Elixir is yet another language
+- An Erlang process is not fast as a Java thread
+- Elixir is yet another language
 - Erlang/OTP developers have to think about processes
 
 * Sources
@@ -242,3 +541,4 @@ Cons:
 - [[https://www.youtube.com/watch?v=bo5WL5IQAd0][How we program multicores -- Joe Armstrong]]
 - [[https://www.youtube.com/watch?v=-CIMUwX1OZY][Elixir/Erlang OTP in Microservice Architecture -- Thomas Newton]]
 - [[https://www.youtube.com/watch?v=gom6nEvtl3U][Elixir: The only Sane Choice in an Insane World -- Brian Cardarella]]
+- [[https://www.youtube.com/watch?v=sJvfCE6PFxY][A Practical Guide to Elixir Protocols -- Kevin Rockwood]]
